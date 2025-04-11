@@ -2,13 +2,49 @@ from clickup_python_sdk.clickupobjects.abstractobject import AbstractObject
 
 
 class Team(AbstractObject):
-    def __init__(self) -> None:
-        super().__init__()
+    """
+    Represents a ClickUp Team/Workspace object.
+    
+    In the ClickUp API, a "team" refers to a workspace. This class provides methods
+    to interact with ClickUp workspaces and manage workspace-level operations.
+    """
+    
+    def __init__(self, id=None) -> None:
+        """
+        Initialize a Team object.
+
+        Args:
+            id (str, optional): The unique identifier of the team/workspace. Defaults to None.
+        """
+        super().__init__(id=id)
+        
+    def get_endpoint(self):
+        """
+        Get the API endpoint for this team.
+
+        Returns:
+            str: The API endpoint path for this team.
+
+        Raises:
+            ValueError: If the team ID is not set.
+        """
+        if "id" not in self:
+            raise ValueError("Team ID is not set.")
+        return "team/" + self["id"]
 
     def get_spaces(self, fields=None):
+        """
+        Get spaces within this team/workspace.
+        
+        Args:
+            fields (list, optional): List of fields to include in the response.
+            
+        Returns:
+            list: A list of Space objects.
+        """
         from clickup_python_sdk.clickupobjects.space import Space
 
-        route = "team/" + self["id"] + "/space?"
+        route = self.get_endpoint() + "/space?"
         method = "GET"
         response = self.api.make_request(method=method, route=route)
 
@@ -18,10 +54,138 @@ class Team(AbstractObject):
         return result
 
     def get_task_templates(self, page=0):
+        """
+        Get task templates within this team/workspace.
+        
+        Args:
+            page (int, optional): Page number for pagination. Defaults to 0.
+            
+        Returns:
+            list: A list of TaskTemplate objects.
+        """
         from clickup_python_sdk.clickupobjects.tasktemplate import TaskTemplate
 
-        route = "team/" + self["id"] + "/taskTemplate"
+        route = self.get_endpoint() + "/taskTemplate"
         method = "GET"
         params = {"page": page}
         response = self.api.make_request(method=method, route=route, params=params)
-        return response
+        
+        result = []
+        for template in response.get("templates", []):
+            result.append(TaskTemplate.create_object(data=template, target_class=TaskTemplate))
+        return result
+        
+    def get_groups(self):
+        """
+        Get user groups in this team/workspace.
+        
+        Returns:
+            list: A list of Group objects.
+        """
+        from clickup_python_sdk.clickupobjects.group import Group
+        
+        route = self.get_endpoint() + "/group"
+        method = "GET"
+        response = self.api.make_request(method=method, route=route)
+        
+        result = []
+        for group in response.get("groups", []):
+            result.append(Group.create_object(data=group, target_class=Group))
+        return result
+        
+    def create_group(self, name, members=None):
+        """
+        Create a new user group in this team/workspace.
+        
+        Args:
+            name (str): The name of the user group.
+            members (list, optional): List of user IDs to add to the group.
+            
+        Returns:
+            Group: The created Group object.
+        """
+        from clickup_python_sdk.clickupobjects.group import Group
+        
+        route = self.get_endpoint() + "/group"
+        method = "POST"
+        values = {"name": name}
+        
+        if members is not None:
+            values["members"] = members
+            
+        response = self.api.make_request(method=method, route=route, values=values)
+        
+        new_group = Group()
+        new_group._set_data(response)
+        return new_group
+        
+    def update_group(self, group_id, name=None, members_add=None, members_remove=None):
+        """
+        Update a user group in this team/workspace.
+        
+        Args:
+            group_id (str): The ID of the user group to update.
+            name (str, optional): The new name for the user group.
+            members_add (list, optional): List of user IDs to add to the group.
+            members_remove (list, optional): List of user IDs to remove from the group.
+            
+        Returns:
+            Group: The updated Group object.
+        """
+        from clickup_python_sdk.clickupobjects.group import Group
+        
+        route = self.get_endpoint() + f"/group/{group_id}"
+        method = "PUT"
+        values = {}
+        
+        if name is not None:
+            values["name"] = name
+        
+        # Handle members
+        if members_add is not None or members_remove is not None:
+            members = {}
+            if members_add is not None:
+                members["add"] = members_add
+            if members_remove is not None:
+                members["rem"] = members_remove
+            if members:
+                values["members"] = members
+                
+        response = self.api.make_request(method=method, route=route, values=values)
+        
+        updated_group = Group()
+        updated_group._set_data(response)
+        return updated_group
+        
+    def delete_group(self, group_id):
+        """
+        Delete a user group in this team/workspace.
+        
+        Args:
+            group_id (str): The ID of the user group to delete.
+            
+        Returns:
+            bool: True if deletion was successful, False otherwise.
+        """
+        route = self.get_endpoint() + f"/group/{group_id}"
+        method = "DELETE"
+        response = self.api.make_request(method=method, route=route)
+        return response.get("success", False)
+        
+    @classmethod
+    def get_authorized_teams(cls):
+        """
+        Get workspaces available to the authenticated user.
+        
+        Returns:
+            list: A list of Team objects for all workspaces available to the authenticated user.
+        """
+        team_obj = cls()
+        route = "team"
+        method = "GET"
+        response = team_obj.api.make_request(method=method, route=route)
+        
+        result = []
+        for team in response.get("teams", []):
+            result.append(cls.create_object(data=team, target_class=cls))
+        return result
