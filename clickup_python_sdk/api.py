@@ -1,10 +1,10 @@
 import requests, time, sys, json
-from clickup_python_sdk.config import API, VERSION
+from clickup_python_sdk.config import API
+from clickup_python_sdk.exceptions import ClickupRequestException
 
 
 class ClickupClient(object):
     API = API
-    SDK_VERSION = VERSION
 
     def __init__(self) -> None:
         pass
@@ -21,7 +21,10 @@ class ClickupClient(object):
 
     @classmethod
     def _set_default_headers(cls, user_token):
-        cls.DEFAULT_HEADERS = {"Authorization": f"{user_token}", "Content-Type": "application/json"}
+        cls.DEFAULT_HEADERS = {
+            "Authorization": f"{user_token}",
+            "Content-Type": "application/json",
+        }
 
     @classmethod
     def _set_default_api(cls, api):
@@ -45,14 +48,18 @@ class ClickupClient(object):
         response = self.make_request(method=method, route=route)
 
         target_class = User
-        self.TOKEN_USER = User.create_object(data=response["user"], target_class=target_class)
+        self.TOKEN_USER = User.create_object(
+            data=response["user"], target_class=target_class
+        )
         return
 
-    def make_request(self, method, route, params=None, values=None, file=None):
+    def make_request(
+        self, method, route, params=None, values=None, file=None, api_version="v2"
+    ):
         # handle rate limit
         if not params:
             params = {}
-        url = self.API + route
+        url = self.API + api_version + "/" + route
         if method in ["GET", "DELETE"]:
             response = requests.request(
                 url=url,
@@ -67,9 +74,13 @@ class ClickupClient(object):
             elif values is None:
                 response = requests.post(url, headers=self.DEFAULT_HEADERS)
             else:
-                response = requests.post(url, data=json.dumps(values), headers=self.DEFAULT_HEADERS)
+                response = requests.post(
+                    url, data=json.dumps(values), headers=self.DEFAULT_HEADERS
+                )
         elif method == "PUT":
-            response = requests.put(url, data=json.dumps(values), headers=self.DEFAULT_HEADERS)
+            response = requests.put(
+                url, data=json.dumps(values), headers=self.DEFAULT_HEADERS
+            )
         else:
             raise ValueError("Invalid request method")
         try:
@@ -77,7 +88,7 @@ class ClickupClient(object):
         except:
             raise requests.exceptions.RequestException(response.text)
         self._update_rate_limits(response.headers)
-        self._verify_response(response)
+        self._verify_response(response, method, url, params, self.DEFAULT_HEADERS)
         return body
 
     def refresh_rate_limit(self):
@@ -89,12 +100,21 @@ class ClickupClient(object):
         _ = self.make_request(method=method, route=route)
         return self
 
-    def _verify_response(self, response):
+    def _verify_response(self, response, method, route, params, headers):
         status_code = response.status_code
         if not 200 <= status_code < 300:
-            message = response.json().get("err")
-            raise requests.exceptions.RequestException(
-                f"Request failed with status code {status_code}. Message: {message}"
+            print(route)
+            raise ClickupRequestException(
+                "Call to ClickUp API was unsuccessful.",
+                request_context={
+                    "method": method,
+                    "route": route,
+                    "params": params,
+                    "headers": headers,
+                },
+                http_headers=response.headers,
+                http_status=response.status_code,
+                body=response.text,
             )
         return True
 
