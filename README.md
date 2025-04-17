@@ -1,16 +1,19 @@
 # ClickUp Python SDK
 
 ## Introduction
+
 The ClickUp Python SDK is a comprehensive wrapper for the ClickUp API (v2), designed to simplify interactions with ClickUp for Python developers. This SDK helps businesses automate their ClickUp workflows and integrate ClickUp data with other systems.
 
 ## Installation
 
 ### From PyPI (Coming Soon)
+
 ```bash
 pip install clickup-python-sdk
 ```
 
 ### From Source
+
 ```bash
 # Clone the repository
 git clone https://github.com/yourusername/clickup-python-sdk.git
@@ -23,6 +26,7 @@ pip install -e .
 ```
 
 ## Package Structure
+
 ```
 clickup-python-sdk/
 ├── LICENSE.txt
@@ -60,6 +64,7 @@ clickup-python-sdk/
 ```
 
 ## Authentication
+
 Initialize the client with your ClickUp API token:
 
 ```python
@@ -70,6 +75,7 @@ client = ClickupClient.init(user_token="your_clickup_api_token")
 ```
 
 ## Features
+
 - **Teams/Workspaces**: Access workspace data and manage spaces
 - **Spaces**: Manage spaces, lists, and tags
 - **Folders**: Access and manage folders within spaces
@@ -86,12 +92,14 @@ client = ClickupClient.init(user_token="your_clickup_api_token")
 ## Usage Examples
 
 ### Getting Teams/Workspaces
+
 ```python
 # Get all workspaces the authenticated user belongs to
 teams = client.get_teams()
 ```
 
 ### Accessing Spaces in a Workspace
+
 ```python
 # Get a list of spaces for a workspace
 team = teams[0]  # First workspace
@@ -99,6 +107,7 @@ spaces = team.get_spaces()
 ```
 
 ### Working with Lists
+
 ```python
 # Get lists in a space
 space = spaces[0]  # First space
@@ -109,6 +118,7 @@ task_list = lists[0]  # First list
 ```
 
 ### Creating a Task
+
 ```python
 # Create a new task in a list
 new_task = task_list.create_task(
@@ -121,6 +131,7 @@ new_task = task_list.create_task(
 ```
 
 ### Updating a Task
+
 ```python
 # Update an existing task
 task = client.get_task(task_id="task_id_here")
@@ -131,6 +142,7 @@ task.update(
 ```
 
 ### Searching for Documents
+
 ```python
 # Search for documents in a workspace
 team = teams[0]  # First workspace
@@ -152,6 +164,7 @@ if specific_docs:
 ```
 
 ### Working with Custom Fields
+
 ```python
 # Get custom fields for a list
 custom_fields = task_list.get_custom_fields()
@@ -165,6 +178,7 @@ task.update_custom_field(
 ```
 
 ## Running Examples
+
 You can run the provided examples to see the SDK in action:
 
 ```bash
@@ -173,7 +187,9 @@ python examples/search_workspace_docs.py
 ```
 
 ## Object Types
+
 The SDK provides object-oriented interfaces for ClickUp's core components:
+
 - `Team`: Team/Workspace management
 - `Space`: Space operations within workspaces
 - `Folder`: Folder management within spaces
@@ -189,13 +205,69 @@ The SDK provides object-oriented interfaces for ClickUp's core components:
 - `Dependency`: Task dependency management
 
 ## Error Handling
+
 The SDK includes built-in error handling for API responses. Failed requests will raise exceptions with appropriate error messages from the ClickUp API.
 
 ## License
+
 This project is licensed under the GNU General Public License v3.0 - see the LICENSE.txt file for details.
 
 ## Contributing
+
 Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Support
+
 For questions or issues, please open an issue on the repository.
+
+## Object Initialization and Retrieval
+
+Most objects in the SDK can be initialized with just an ID and then retrieved using the `get()` method. However, some objects require additional context IDs for initialization.
+
+### Basic Object Initialization
+
+Here's how to initialize and retrieve a Task object:
+
+```python
+# Initialize with just the ID
+task = Task(id="task_id_here")
+
+# Get full task details
+task.get()
+```
+
+### Objects Requiring Additional Context
+
+Some objects require additional context IDs for initialization. Here are examples:
+
+1. Document objects require workspace_id:
+
+```python
+# Initialize with required workspace_id
+doc = Document(id="document_id", workspace_id="team_id")
+doc.get()
+```
+
+2. DocumentPage objects require both workspace_id and doc_id:
+
+```python
+# Initialize with required IDs
+page = DocumentPage(
+    id="page_id",
+    workspace_id="team_id",
+    doc_id="document_id"
+)
+page.get()
+```
+
+3. Objects from Team search (automatic context):
+
+```python
+# Get documents from a team (workspace_id is automatically set)
+team = client.get_teams()[0]
+docs = team.search_docs()
+doc = docs[0]
+doc.get()
+```
+
+The `get()` method will retrieve the complete object details from the ClickUp API and update the object with the latest information. Check the documentation for each object type to understand its specific initialization requirements.

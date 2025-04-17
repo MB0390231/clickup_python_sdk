@@ -233,7 +233,9 @@ class Team(AbstractObject):
 
         result = []
         for doc_data in response.get("docs", []):
-            doc = Document.create_object(data=doc_data, target_class=Document)
+            # Create Document with workspace_id
+            doc = Document(id=doc_data.get("id"), workspace_id=self["id"])
+            doc._set_data(doc_data)
             result.append(doc)
 
         return result

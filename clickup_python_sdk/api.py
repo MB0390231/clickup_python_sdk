@@ -62,9 +62,7 @@ class ClickupClient(object):
         url = self.API + api_version + "/" + route
         if method in ["GET", "DELETE"]:
             response = requests.request(
-                url=url,
-                method=method,
-                headers=self.DEFAULT_HEADERS,
+                url=url, method=method, headers=self.DEFAULT_HEADERS, params=params
             )
         elif method == "POST":
             if file:
@@ -83,13 +81,20 @@ class ClickupClient(object):
             )
         else:
             raise ValueError("Invalid request method")
-        try:
-            body = response.json()
-        except:
-            raise requests.exceptions.RequestException(response.text)
+
         self._update_rate_limits(response.headers)
         self._verify_response(response, method, url, params, self.DEFAULT_HEADERS)
-        return body
+
+        # Handle empty responses
+        if not response.text:
+            return None
+
+        # Try to parse JSON, but don't fail if it's not JSON
+        try:
+            return response.json()
+        except json.JSONDecodeError:
+            # If it's not JSON, return the raw text
+            return response.text
 
     def refresh_rate_limit(self):
         """
