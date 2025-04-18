@@ -368,3 +368,38 @@ class Space(AbstractObject):
         new_view = View()
         new_view._set_data(response)
         return new_view
+        
+    def create_document(self, workspace_id, name, visibility=None, create_page=True):
+        """
+        Create a new Doc with this Space as the parent.
+
+        Args:
+            workspace_id (str): The ID of the workspace where the document will be created (required).
+            name (str): The name of the new Doc.
+            visibility (str, optional): The visibility of the new Doc. For example, 'PUBLIC' or 'PRIVATE'.
+            create_page (bool, optional): Whether to create a new page when creating the Doc. Defaults to True.
+
+        Returns:
+            Document: The created Document object.
+        """
+        from clickup_python_sdk.clickupobjects.document import Document
+
+        route = f"workspaces/{workspace_id}/docs"
+        method = "POST"
+        values = {
+            "name": name,
+            "parent": {
+                "id": self["id"],
+                "type": 4  # 4 is the type for Space
+            },
+            "create_page": create_page
+        }
+
+        if visibility is not None:
+            values["visibility"] = visibility
+
+        response = self.api.make_request(method=method, route=route, values=values, api_version="v3")
+        
+        new_document = Document(id=response.get("id"), workspace_id=workspace_id)
+        new_document._set_data(response)
+        return new_document
