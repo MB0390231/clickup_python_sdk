@@ -403,3 +403,24 @@ class Space(AbstractObject):
         new_document = Document(id=response.get("id"), workspace_id=workspace_id)
         new_document._set_data(response)
         return new_document
+
+    def get_custom_fields(self):
+        """
+        Get custom fields associated with this space.
+
+        Retrieves all custom fields configured for the space.
+
+        Returns:
+            list: A list of CustomField objects.
+        """
+        from clickup_python_sdk.clickupobjects.customfield import CustomField
+
+        route = self.get_endpoint() + "/field"
+        method = "GET"
+        response = self.api.make_request(method=method, route=route)
+        result = []
+        for field in response["fields"]:
+            result.append(
+                CustomField.create_object(data=field, target_class=CustomField)
+            )
+        return result

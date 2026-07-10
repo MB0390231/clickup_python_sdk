@@ -257,3 +257,24 @@ class Team(AbstractObject):
         for team in response.get("teams", []):
             result.append(cls.create_object(data=team, target_class=cls))
         return result
+
+    def get_custom_fields(self):
+        """
+        Get custom fields associated with this team.
+
+        Retrieves all custom fields configured for the team.
+
+        Returns:
+            list: A list of CustomField objects.
+        """
+        from clickup_python_sdk.clickupobjects.customfield import CustomField
+
+        route = self.get_endpoint() + "/field"
+        method = "GET"
+        response = self.api.make_request(method=method, route=route)
+        result = []
+        for field in response["fields"]:
+            result.append(
+                CustomField.create_object(data=field, target_class=CustomField)
+            )
+        return result
