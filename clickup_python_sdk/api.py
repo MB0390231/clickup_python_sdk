@@ -108,7 +108,9 @@ class ClickupClient(object):
     def _verify_response(self, response, method, route, params, headers):
         status_code = response.status_code
         if not 200 <= status_code < 300:
-            print(route)
+            # Diagnostics go to stderr: this is a library, stdout belongs to the
+            # caller (CLIs pipe JSON there) and must never carry log lines.
+            print(f"{status_code} {method} {route}", file=sys.stderr)
             raise ClickupRequestException(
                 "Call to ClickUp API was unsuccessful.",
                 request_context={
@@ -134,10 +136,10 @@ class ClickupClient(object):
         t is an interger
         """
         for i in range(t, 0, -1):
-            sys.stdout.write(str(i) + " ")
-            sys.stdout.flush()
+            sys.stderr.write(str(i) + " ")
+            sys.stderr.flush()
             time.sleep(1)
-        print("")
+        print("", file=sys.stderr)
         return
 
     def get_teams(self, fields=None):
