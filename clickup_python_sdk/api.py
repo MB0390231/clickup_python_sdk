@@ -1,4 +1,4 @@
-import requests, time, sys, json
+import requests, sys, json
 from clickup_python_sdk.config import API
 from clickup_python_sdk.exceptions import ClickupRequestException
 
@@ -126,20 +126,16 @@ class ClickupClient(object):
         return True
 
     def _update_rate_limits(self, headers):
+        """
+        Records ClickUp's rate-limit headers after each request.
+
+        Informational only: this client does NOT retry or back off on 429 —
+        it raises ClickupRequestException like any other error status. Callers
+        that need to survive a rate-limit episode must implement their own
+        backoff, and may read these attributes to decide how long to wait.
+        """
         self.RATE_LIMIT_REMAINING = headers.get("X-RateLimit-Remaining")
         self.RATE_RESET = headers.get("X-RateLimit-Reset")
-        return
-
-    def _beauty_sleep(self, t):
-        """
-        Just a pretty way to countdown in the terminal
-        t is an interger
-        """
-        for i in range(t, 0, -1):
-            sys.stderr.write(str(i) + " ")
-            sys.stderr.flush()
-            time.sleep(1)
-        print("", file=sys.stderr)
         return
 
     def get_teams(self, fields=None):
