@@ -37,6 +37,7 @@ clickup-python-sdk/
 │   ├── __init__.py
 │   ├── api.py
 │   ├── config.py
+│   ├── dates.py
 │   └── clickupobjects/
 │       ├── __init__.py
 │       ├── abstractobject.py
@@ -60,7 +61,8 @@ clickup-python-sdk/
 ├── examples/
 │   └── search_workspace_docs.py
 └── tests/
-    └── __init__.py
+    ├── __init__.py
+    └── test_dates.py
 ```
 
 ## Authentication
@@ -140,6 +142,31 @@ task.update(
     status="In Progress"
 )
 ```
+
+### Task Dates (due and start)
+
+ClickUp stores task dates as millisecond timestamps plus a `*_date_time` flag. A date-only
+value is stored at 4:00 AM in the user's timezone, the same as the ClickUp UI does.
+`clickup_python_sdk.dates` builds and reads them:
+
+```python
+from clickup_python_sdk.dates import date_fields, format_timestamp
+
+# Date only -> {"due_date": 1791363600000, "due_date_time": False}
+task.update(**date_fields("due", "2026-10-07", tz="America/Chicago"))
+
+# Date and time (wall clock in tz)
+task.update(**date_fields("start", "2026-10-07T17:00", tz="America/Chicago"))
+
+# Remove a date (sends due_date: null)
+task.update(clear_due_date=True)
+
+# Read back: "Wed 2026-10-07"
+format_timestamp(task["due_date"], "America/Chicago")  # 4:00 AM local reads as date only
+```
+
+`List.create_task(**date_fields("due", ...))` works the same way. Tests:
+`python3 -m unittest discover tests`.
 
 ### Searching for Documents
 

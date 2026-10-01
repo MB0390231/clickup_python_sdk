@@ -146,6 +146,8 @@ class Task(AbstractObject):
         custom_item_id=None,
         custom_task_ids=None,
         team_id=None,
+        clear_due_date=False,
+        clear_start_date=False,
     ):
         """
         Update task properties with specified named parameters.
@@ -181,11 +183,17 @@ class Task(AbstractObject):
                 A value of None sets the task type to "Task".
             custom_task_ids (bool, optional): Set to True if referencing a task by its custom task ID.
             team_id (int, optional): Required when custom_task_ids is True. The Workspace ID.
+            clear_due_date (bool, optional): Remove the due date (sends due_date null).
+                Cannot be combined with due_date.
+            clear_start_date (bool, optional): Remove the start date (sends start_date null).
+                Cannot be combined with start_date.
 
         Returns:
             Task: The current task instance with updated information.
 
         Note:
+            Dates are millisecond timestamps; ``clickup_python_sdk.dates.date_fields``
+            builds them from "YYYY-MM-DD" / "YYYY-MM-DDTHH:MM" in a timezone.
             To update Custom Fields on a task, you must use the update_custom_field() method instead.
 
         Example:
@@ -227,11 +235,19 @@ class Task(AbstractObject):
         if priority is not None:
             values["priority"] = priority
 
+        if clear_due_date and due_date is not None:
+            raise ValueError("give due_date or clear_due_date, not both")
+        if clear_start_date and start_date is not None:
+            raise ValueError("give start_date or clear_start_date, not both")
+
         if due_date is not None:
             values["due_date"] = due_date
 
         if due_date_time is not None:
             values["due_date_time"] = due_date_time
+
+        if clear_due_date:
+            values["due_date"] = None
 
         if parent is not None:
             values["parent"] = parent
@@ -244,6 +260,9 @@ class Task(AbstractObject):
 
         if start_date_time is not None:
             values["start_date_time"] = start_date_time
+
+        if clear_start_date:
+            values["start_date"] = None
 
         if points is not None:
             values["points"] = points
